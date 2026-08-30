@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--
+      Both mDNS paths in the Rust core (the DNS-SD responder that carries the
+      rendezvous records, and iroh's own address lookup) are in-process
+      multicast. Wi-Fi drivers drop multicast the app did not ask for, so a
+      session holds a WifiManager.MulticastLock for its lifetime, which needs
+      this permission.
+    -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!--
+      Android 17 (API 37) gates local-network traffic behind this runtime
+      permission for apps targeting SDK 37, which this one does: without it
+      neither mDNS path, the unicast side channel, nor a direct LAN path
+      works. Asked for before a session on a LAN channel starts, never on
+      launch (LocalNetworkPermission / SessionController); a denial leaves the
+      relay paths, so only the "Local network only" channel is dead without
+      it. The permission does not exist below API 37 - there INTERNET grants
+      local access implicitly and the system ignores this line.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
+    <!--
+      allowBackup=false: an application identity *is* this installation. A
+      backup restored onto another device would present the same key from two
+      devices — a trust bug, not a convenience — and the Keystore-wrapped
+      secrets would not decrypt there anyway.
+    -->
+    <application
+        android:name=".DuocbApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Duocb">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
