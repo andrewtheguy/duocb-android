@@ -1,6 +1,7 @@
 package com.andrewtheguy.duocb
 
 import org.json.JSONArray
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.CRC32
 
@@ -25,7 +26,8 @@ data class ClipItem(
     val expanded: Boolean get() = peekedAt != null
 
     /** Two four-hex groups, identical to the desktop's `crc32_display`. */
-    val crcDisplay: String get() = "%04X-%04X".format((crc32 ushr 16) and 0xFFFF, crc32 and 0xFFFF)
+    val crcDisplay: String get() =
+        String.format(Locale.ROOT, "%04X-%04X", (crc32 ushr 16) and 0xFFFF, crc32 and 0xFFFF)
 
     val sizeDisplay: String get() = formatBytes(text.toByteArray(Charsets.UTF_8).size.toLong())
 
@@ -47,8 +49,8 @@ data class ClipItem(
         /** Binary units, one decimal above bytes: "12 B", "1.5 KiB", "2.0 MiB". */
         fun formatBytes(bytes: Long): String = when {
             bytes < 1024 -> "$bytes B"
-            bytes < 1024 * 1024 -> "%.1f KiB".format(bytes / 1024.0)
-            else -> "%.1f MiB".format(bytes / (1024.0 * 1024.0))
+            bytes < 1024 * 1024 -> String.format(Locale.ROOT, "%.1f KiB", bytes / 1024.0)
+            else -> String.format(Locale.ROOT, "%.1f MiB", bytes / (1024.0 * 1024.0))
         }
     }
 }

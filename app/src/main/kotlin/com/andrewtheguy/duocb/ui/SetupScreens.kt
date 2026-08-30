@@ -61,7 +61,9 @@ fun IdentityChoiceScreen(controller: SessionController, navigate: (Step) -> Unit
 @Composable
 fun IdentityImportScreen(controller: SessionController, navigate: (Step) -> Unit) {
     val context = LocalContext.current
-    var draft by rememberSaveable { mutableStateOf("") }
+    // `remember`, never `rememberSaveable`: the raw private key stays in memory
+    // and is never written to saved-instance state.
+    var draft by remember { mutableStateOf("") }
     var pasteError by remember { mutableStateOf<String?>(null) }
     val trimmed = draft.trim()
     val keyError = if (trimmed.isEmpty()) null else SessionController.validateIdentity(trimmed)

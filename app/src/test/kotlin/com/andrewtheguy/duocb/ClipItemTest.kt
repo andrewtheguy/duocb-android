@@ -23,8 +23,9 @@ class ClipItemTest {
 
     @Test
     fun crcIsOverUtf8Bytes() {
-        // "é" is two bytes in UTF-8; a UTF-16 CRC would differ.
-        assertEquals(ClipItem.crc32("é"), ClipItem.crc32("é"))
+        // "é" is two bytes in UTF-8 (C3 A9), whose CRC-32/ISO-HDLC is
+        // 0x0E048D3E; a UTF-16 CRC would differ.
+        assertEquals(0x0E048D3EL, ClipItem.crc32("é"))
         assertEquals("2 B", ClipItem("é", timestamp = 0).sizeDisplay)
     }
 

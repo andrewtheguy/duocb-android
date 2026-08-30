@@ -224,6 +224,9 @@ class SessionController(context: Context) {
     /** The start held back by that prompt, replayed once the answer is in. */
     private var parkedStart: LastSession? = null
 
+    /** A start asked for mid-teardown, replayed once the old instance is gone. */
+    private var queuedStart: LastSession? = null
+
     /** Whether the prompt has already been answered (or shown) this process. */
     private var localNetworkAsked = false
 
@@ -504,6 +507,7 @@ class SessionController(context: Context) {
         config = DuocbConfig.EMPTY.copy(channel = config.channel)
         peers = emptyList()
         lastSession = null
+        queuedStart = null
         incomingCard = null
         // A reset is also the way out of an unreadable config: it is the one
         // action whose whole purpose is to discard what was stored.
@@ -660,7 +664,17 @@ class SessionController(context: Context) {
     }
 
     private fun startSession(role: Role, peerKey: String?, pin: String? = null, ip: String? = null) {
-        if (stopping) return // a transition is already in flight
+        if (stopping) {
+            // A previous instance is still winding down off-thread and the FFI
+            // allows only one at a time. Queue the ask instead of dropping it:
+            // a tap that vanished would read as an unregistered tap. The screen
+            // already follows `lastSession` while `phase` is Starting.
+            lastError = null
+            queuedStart = LastSession(role, peerKey, pin, ip)
+            lastSession = queuedStart
+            phase = Phase.Starting
+            return
+        }
         // Android 17 gates every local-network socket behind a runtime
         // permission, so ask before the session starts rather than letting the
         // LAN half fail as if the network were at fault. Only once per
@@ -718,6 +732,7 @@ class SessionController(context: Context) {
         lastError = null
         incomingCard = null
         parkedStart = null
+        queuedStart = null
         teardown {}
     }
 
@@ -837,7 +852,15 @@ class SessionController(context: Context) {
             withContext(Dispatchers.IO) { DuocbNative.stop(h) }
             stopping = false
             releaseMulticastLock()
-            next()
+            // A start asked for while this teardown ran supersedes [next]: it
+            // is the newer request, and its own teardown is now a no-op.
+            val queued = queuedStart
+            if (queued != null) {
+                queuedStart = null
+                startSession(queued.role, queued.peerKey, queued.pin, queued.ip)
+            } else {
+                next()
+            }
         }
     }
 
@@ -880,7 +903,13 @@ class SessionController(context: Context) {
         if (handle == 0L || !canSend || text.isEmpty()) return
         lastError = null
         pendingOutbox = text
-        DuocbNative.sendClipboard(handle, text)
+        // 0 = queued, and the outcome then arrives as `item_sent` or `error`.
+        // Anything else never reached the runtime, so the outbox slot has to be
+        // freed here or sending stays disabled for the rest of the session.
+        if (DuocbNative.sendClipboard(handle, text) != 0) {
+            pendingOutbox = null
+            lastError = "Could not send that item"
+        }
     }
 
     fun queryConnPath() {

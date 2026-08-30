@@ -128,7 +128,7 @@ Every CTA has a Compose `testTag` exposed as a `resource-id`, so
 `uiautomator dump` finds it without coordinates:
 
 ```bash
-adb shell 'uiautomator dump /sdcard/ui.xml >/dev/null; cat /sdcard/ui.xml' | grep -o 'resource-id="[a-z_]*"[^>]*bounds="[^"]*"'
+adb shell 'uiautomator dump /sdcard/ui.xml >/dev/null; cat /sdcard/ui.xml' | grep -o 'resource-id="[A-Za-z0-9_]*"[^>]*bounds="[^"]*"'
 adb shell input tap X Y                 # centre of the bounds
 adb shell input text 'hello%sworld'     # %s for a space
 adb exec-out screencap -p > shot.png

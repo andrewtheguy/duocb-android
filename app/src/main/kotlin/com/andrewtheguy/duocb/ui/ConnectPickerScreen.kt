@@ -45,13 +45,28 @@ fun ConnectPickerScreen(controller: SessionController, navigate: (Step) -> Unit)
     val context = LocalContext.current
     var showImport by rememberSaveable { mutableStateOf(false) }
     var importDraft by rememberSaveable { mutableStateOf("") }
-    var importError by remember { mutableStateOf<String?>(null) }
+    // Errors an action reports (an empty clipboard, a refused import); cleared
+    // the moment the draft changes, since they describe the old one.
+    var actionError by remember { mutableStateOf<String?>(null) }
     var pendingRemoval by remember { mutableStateOf<TrustedPeer?>(null) }
     // The pasted card decoded, or null while it is empty or invalid. Decoding
     // verifies the signature, so it is done once per edit, not per frame.
     val preview = remember(importDraft) {
         importDraft.trim().takeIf { it.isNotEmpty() }?.let { IdentityCardInfo.parse(it) }
     }
+    // Desktop parity: an entry that holds something but does not verify says
+    // why, rather than leaving a disabled Trust button that reads as an ignored
+    // paste. Derived from the draft, so however it was filled in — typed or
+    // pasted — the verdict is about what is actually in the field.
+    val draftError = remember(importDraft) {
+        val trimmed = importDraft.trim()
+        if (trimmed.isNotEmpty() && IdentityCardInfo.parse(trimmed) == null) {
+            SessionController.validateIdentityCard(trimmed) ?: "invalid identity card"
+        } else {
+            null
+        }
+    }
+    val importError = actionError ?: draftError
 
     ScreenScaffold(title = "Trusted devices", onBack = { navigate(Step.HUB) }) {
         Section(
@@ -88,15 +103,7 @@ fun ConnectPickerScreen(controller: SessionController, navigate: (Step) -> Unit)
                     value = importDraft,
                     onValueChange = {
                         importDraft = it
-                        val trimmed = it.trim()
-                        // Desktop parity: an entry that holds something but does
-                        // not verify says why, rather than leaving a disabled
-                        // Trust button that reads as an ignored paste.
-                        importError = if (trimmed.isNotEmpty() && IdentityCardInfo.parse(trimmed) == null) {
-                            SessionController.validateIdentityCard(trimmed) ?: "invalid identity card"
-                        } else {
-                            null
-                        }
+                        actionError = null
                     },
                     label = { Text("Paste the other device's card") },
                     minLines = 2,
@@ -116,22 +123,28 @@ fun ConnectPickerScreen(controller: SessionController, navigate: (Step) -> Unit)
                 }
                 RowButton("Paste", icon = Icons.Filled.ContentPaste) {
                     val pasted = Clipboard.read(context)?.trim()
-                    if (pasted.isNullOrEmpty()) importError = "The clipboard is empty" else importDraft = pasted
+                    if (pasted.isNullOrEmpty()) {
+                        actionError = "The clipboard is empty"
+                    } else {
+                        importDraft = pasted
+                        actionError = null
+                    }
                 }
                 // An expired card is refused by the import itself, and the
                 // expiry line above says so.
                 RowButton("Trust this device", enabled = preview != null, testTag = "trust_pasted") {
                     val err = controller.importPeerCard(importDraft)
                     if (err != null) {
-                        importError = err
+                        actionError = err
                     } else {
                         importDraft = ""
+                        actionError = null
                         showImport = false
                     }
                 }
                 RowButton("Cancel") {
                     importDraft = ""
-                    importError = null
+                    actionError = null
                     showImport = false
                 }
             } else {
