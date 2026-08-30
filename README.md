@@ -29,8 +29,9 @@ config / event / card-info JSON shapes both mobile apps share).
 - JDK 17, Android SDK with platform 37 (the Gradle wrapper brings Gradle
   itself; AGP 9 with built-in Kotlin). `local.properties` (git-ignored) points
   Gradle at the SDK: `sdk.dir=/path/to/Android/sdk`.
-- An Android 10+ (`minSdk` 29) arm64 device or emulator (the app is arm64-v8a
-  only). The app **targets Android 17 (SDK 37)**, where local-network traffic —
+- An Android 10+ (`minSdk` 29) 64-bit device or emulator (the app packages
+  arm64-v8a and x86_64; 32-bit devices are not supported). The app **targets
+  Android 17 (SDK 37)**, where local-network traffic —
   the core's mDNS, the unicast side channel, a direct LAN path — needs the
   `ACCESS_LOCAL_NETWORK` runtime permission; the app asks for it before the
   first session on a LAN channel. The permission exists only from API 37; below
@@ -67,7 +68,7 @@ it in the sibling checkout and set `DUOCB_LOCAL_JNILIBS=1` (only the exact
 value `1` opts in):
 
 ```bash
-(cd ../duocb && ./build-android.sh release)           # arm64-v8a by default
+(cd ../duocb && ./build-android.sh release)           # arm64-v8a + x86_64 by default
 DUOCB_LOCAL_JNILIBS=1 ANDROID_SERIAL=<serial> ./gradlew :app:installDebug
 ```
 
@@ -126,8 +127,9 @@ no advertising ID. The `ACCESS_LOCAL_NETWORK` and `CHANGE_WIFI_MULTICAST_STATE`
 permissions exist for the LAN rendezvous and are explained under
 [Requirements](#requirements).
 
-The bundle is arm64-v8a only by design, so Play will report the release as
-reaching only 64-bit arm devices; that is expected, not a misconfiguration.
+The bundle is 64-bit only (arm64-v8a and x86_64) by design, so Play will
+report the release as not reaching 32-bit devices; that is expected, not a
+misconfiguration.
 
 ## Using the app
 
