@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The iOS icon (duocb-ios/icon.svg) without its background: two overlapping
+     clipboards, the front one lined. Scaled about the centre so both boards
+     stay inside the adaptive-icon safe zone (the central 66/108 circle). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <group
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:pivotX="512"
+        android:pivotY="512">
+        <group
+            android:rotation="-11"
+            android:pivotX="432"
+            android:pivotY="452">
+            <path
+                android:pathData="M300,228 h264 a54,54 0 0 1 54,54 v340 a54,54 0 0 1 -54,54 h-264 a54,54 0 0 1 -54,-54 v-340 a54,54 0 0 1 54,-54 z"
+                android:fillColor="#EAF3FE" />
+            <path
+                android:pathData="M382,200 h100 a28,28 0 0 1 0,56 h-100 a28,28 0 0 1 0,-56 z"
+                android:fillColor="#BCD8F7" />
+        </group>
+        <group
+            android:rotation="9"
+            android:pivotX="576"
+            android:pivotY="588">
+            <path
+                android:pathData="M444,364 h264 a54,54 0 0 1 54,54 v340 a54,54 0 0 1 -54,54 h-264 a54,54 0 0 1 -54,-54 v-340 a54,54 0 0 1 54,-54 z"
+                android:fillColor="#FFFFFF" />
+            <path
+                android:pathData="M526,336 h100 a28,28 0 0 1 0,56 h-100 a28,28 0 0 1 0,-56 z"
+                android:fillColor="#DCEBFC"
+                android:strokeColor="#B7D6F6"
+                android:strokeWidth="4" />
+            <path
+                android:pathData="M467,498 h218 a15,15 0 0 1 0,30 h-218 a15,15 0 0 1 0,-30 z"
+                android:fillColor="#BCDAFB" />
+            <path
+                android:pathData="M467,560 h218 a15,15 0 0 1 0,30 h-218 a15,15 0 0 1 0,-30 z"
+                android:fillColor="#BCDAFB" />
+            <path
+                android:pathData="M467,622 h134 a15,15 0 0 1 0,30 h-134 a15,15 0 0 1 0,-30 z"
+                android:fillColor="#BCDAFB" />
+        </group>
+    </group>
+</vector>

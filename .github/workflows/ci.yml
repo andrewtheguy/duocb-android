@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The APK must carry the pinned release's libduocb.so: refuse to build one
+      # without a valid pin rather than publish an artifact with no native
+      # library in it (pin with scripts/bump-jnilibs.sh <tag>).
+      - name: Check the duocb release pin
+        run: |
+          if ! grep -qE '^duocb.releaseSha256=[0-9a-f]{64}$' gradle.properties; then
+            echo "::error::gradle.properties has no valid duocb.releaseSha256; pin a published duocb release with scripts/bump-jnilibs.sh <tag>"
+            exit 1
+          fi
+
+      - name: Unit tests + debug APK
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --console=plain
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk

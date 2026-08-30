@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--
+      Both mDNS paths in the Rust core (the DNS-SD responder that carries the
+      rendezvous records, and iroh's own address lookup) are in-process
+      multicast. Wi-Fi drivers drop multicast the app did not ask for, so a
+      session holds a WifiManager.MulticastLock for its lifetime, which needs
+      this permission. No local-network runtime permission is involved: the app
+      targets SDK 35, where the INTERNET permission grants that implicitly (see
+      app/build.gradle.kts for why the target is pinned there).
+    -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!--
+      allowBackup=false: an application identity *is* this installation. A
+      backup restored onto another device would present the same key from two
+      devices — a trust bug, not a convenience — and the Keystore-wrapped
+      secrets would not decrypt there anyway.
+    -->
+    <application
+        android:name=".DuocbApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Duocb">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
