@@ -65,7 +65,10 @@ import org.json.JSONObject
  *
  * Both mDNS paths in the core run in-process, and Wi-Fi drivers drop multicast
  * an app has not asked for, so a [WifiManager.MulticastLock] is held for the
- * life of every session whose channel uses the local network.
+ * life of every session whose channel uses the local network. On Android 17
+ * that traffic also needs a runtime permission, asked for once before the
+ * first session on a LAN channel — see [LocalNetworkPermission] and
+ * [awaitingLocalNetworkPermission].
  */
 class SessionController(context: Context) {
     private val appContext = context.applicationContext
@@ -207,6 +210,22 @@ class SessionController(context: Context) {
 
     /** Last error message, shown as a banner; errors are not always fatal. */
     var lastError: String? by mutableStateOf(null)
+
+    /**
+     * True while a session start is parked on Android 17's local-network
+     * permission prompt (`DuocbRoot` launches the request and reports the
+     * answer back to [onLocalNetworkPermissionResult]). At most one prompt per
+     * process: the system remembers the answer, and a session that starts
+     * without the permission is degraded, not impossible.
+     */
+    var awaitingLocalNetworkPermission: Boolean by mutableStateOf(false)
+        private set
+
+    /** The start held back by that prompt, replayed once the answer is in. */
+    private var parkedStart: LastSession? = null
+
+    /** Whether the prompt has already been answered (or shown) this process. */
+    private var localNetworkAsked = false
 
     // ---------------------------------------------------------------------
     // Standing identity
@@ -642,6 +661,19 @@ class SessionController(context: Context) {
 
     private fun startSession(role: Role, peerKey: String?, pin: String? = null, ip: String? = null) {
         if (stopping) return // a transition is already in flight
+        // Android 17 gates every local-network socket behind a runtime
+        // permission, so ask before the session starts rather than letting the
+        // LAN half fail as if the network were at fault. Only once per
+        // process: the answer is the system's to remember, and a denial still
+        // leaves the relay paths.
+        if (!localNetworkAsked && config.channel.usesLan &&
+            !LocalNetworkPermission.isGranted(appContext)
+        ) {
+            lastError = null
+            parkedStart = LastSession(role, peerKey, pin, ip)
+            awaitingLocalNetworkPermission = true
+            return
+        }
         lastError = null
         incomingCard = null
         // Only a clipboard session has a peer to name; a session re-entered by
@@ -685,6 +717,7 @@ class SessionController(context: Context) {
         phase = Phase.Idle
         lastError = null
         incomingCard = null
+        parkedStart = null
         teardown {}
     }
 
@@ -698,6 +731,30 @@ class SessionController(context: Context) {
         if (handle == 0L) return
         tick()
         checkRuntimeAlive()
+    }
+
+    /**
+     * The answer to the local-network prompt, from `DuocbRoot`. The parked
+     * start goes ahead either way: a denial costs the local paths, not the
+     * session — `lan_then_nostr` still reaches the other device over relays,
+     * and only `lan_only` is left with nothing to try, which is the one case
+     * worth a banner.
+     */
+    fun onLocalNetworkPermissionResult(granted: Boolean) {
+        awaitingLocalNetworkPermission = false
+        localNetworkAsked = true
+        val parked = parkedStart ?: return
+        parkedStart = null
+        startSession(parked.role, parked.peerKey, parked.pin, parked.ip)
+        if (!granted) {
+            lastError = if (config.channel == SignalChannel.LAN_ONLY) {
+                "Local network access is off, and this device is set to Local network only. " +
+                    "Turn it on in Android's app permissions, or pick another channel in Settings."
+            } else {
+                "Local network access is off, so this session can only use relay servers. " +
+                    "Turn it on in Android's app permissions to use the local network."
+            }
+        }
     }
 
     /** Build the role's config and start a runtime instance. */

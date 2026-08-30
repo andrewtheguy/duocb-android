@@ -8,11 +8,20 @@
       rendezvous records, and iroh's own address lookup) are in-process
       multicast. Wi-Fi drivers drop multicast the app did not ask for, so a
       session holds a WifiManager.MulticastLock for its lifetime, which needs
-      this permission. No local-network runtime permission is involved: the app
-      targets SDK 35, where the INTERNET permission grants that implicitly (see
-      app/build.gradle.kts for why the target is pinned there).
+      this permission.
     -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!--
+      Android 17 (API 37) gates local-network traffic behind this runtime
+      permission for apps targeting SDK 37, which this one does: without it
+      neither mDNS path, the unicast side channel, nor a direct LAN path
+      works. Asked for before a session on a LAN channel starts, never on
+      launch (LocalNetworkPermission / SessionController); a denial leaves the
+      relay paths, so only the "Local network only" channel is dead without
+      it. The permission does not exist below API 37 - there INTERNET grants
+      local access implicitly and the system ignores this line.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <!--
       allowBackup=false: an application identity *is* this installation. A

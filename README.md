@@ -30,10 +30,13 @@ config / event / card-info JSON shapes both mobile apps share).
   itself; AGP 9 with built-in Kotlin). `local.properties` (git-ignored) points
   Gradle at the SDK: `sdk.dir=/path/to/Android/sdk`.
 - An Android 10+ (`minSdk` 29) arm64 device or emulator (the app is arm64-v8a
-  only). The app **targets Android 15 (SDK 35)** deliberately: from target 37
-  on, Android gates the in-process mDNS the core relies on behind the
-  `ACCESS_LOCAL_NETWORK` runtime permission, while a lower target keeps the
-  implicit grant on every Android version.
+  only). The app **targets Android 17 (SDK 37)**, where local-network traffic —
+  the core's mDNS, the unicast side channel, a direct LAN path — needs the
+  `ACCESS_LOCAL_NETWORK` runtime permission; the app asks for it before the
+  first session on a LAN channel. The permission exists only from API 37; below
+  that `INTERNET` grants local access implicitly and nothing is asked. On an
+  API 37 device a scripted run wants it pre-granted:
+  `adb shell pm grant com.andrewtheguy.duocb android.permission.ACCESS_LOCAL_NETWORK`.
 - For FFI work: the sibling `../duocb` checkout, the Android NDK and
   `cargo-ndk` (see that repo's `build-android.sh`).
 

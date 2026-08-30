@@ -1,6 +1,8 @@
 package com.andrewtheguy.duocb.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,6 +14,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import com.andrewtheguy.duocb.LocalNetworkPermission
 import com.andrewtheguy.duocb.SessionController
 
 /**
@@ -49,6 +52,7 @@ enum class Step {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DuocbRoot(controller: SessionController) {
+    LocalNetworkPermissionPrompt(controller)
     Box(Modifier.semantics { testTagsAsResourceId = true }) {
         when {
             controller.incomingCard != null -> CardConfirmScreen(controller)
@@ -99,5 +103,33 @@ private fun SetupFlow(controller: SessionController) {
         Step.CONNECT -> ConnectPickerScreen(controller, navigate)
         Step.CARD_SETUP -> CardSetupScreen(controller, navigate)
         Step.SETTINGS -> SettingsScreen(controller, navigate)
+    }
+}
+
+/**
+ * Android 17's local-network prompt, on behalf of a session start the
+ * controller has parked ([SessionController.awaitingLocalNetworkPermission]).
+ * It lives at the root because every session start goes through the same
+ * parking spot — the connect picker, both card-setup roles, Reconnect and the
+ * debug autostart alike.
+ *
+ * `requested` keeps a recreation while the dialog is up from asking twice: the
+ * launcher's key is saved, so the answer reaches the new callback by itself.
+ */
+@Composable
+private fun LocalNetworkPermissionPrompt(controller: SessionController) {
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        controller.onLocalNetworkPermissionResult(granted)
+    }
+    var requested by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(controller.awaitingLocalNetworkPermission) {
+        if (!controller.awaitingLocalNetworkPermission) {
+            requested = false
+        } else if (!requested) {
+            requested = true
+            launcher.launch(LocalNetworkPermission.NAME)
+        }
     }
 }

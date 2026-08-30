@@ -91,13 +91,14 @@ android {
         // applicationId can change, the package of that class cannot.
         applicationId = "com.andrewtheguy.duocb"
         minSdk = 29
-        // Deliberately Android 15, not 17: from targetSdk 37 on, Android gates
-        // every local-network socket (the in-process mDNS the core relies on)
-        // behind the ACCESS_LOCAL_NETWORK runtime permission. Below that the
-        // INTERNET permission grants it implicitly on every Android version,
-        // and Google's guidance is not to declare or request the permission
-        // until the target is raised.
-        targetSdk = 35
+        // Android 17. From this target on, Android gates every local-network
+        // socket (the in-process mDNS the core relies on, the unicast side
+        // channel, a direct LAN path) behind the ACCESS_LOCAL_NETWORK runtime
+        // permission, which the app declares and asks for before a session on
+        // a LAN channel starts (LocalNetworkPermission, SessionController).
+        // Below API 37 no such permission exists and INTERNET grants local
+        // access implicitly, so the ask is API-gated, not target-gated.
+        targetSdk = 37
         versionCode = providers.gradleProperty("duocb.versionCode").get().toInt()
         versionName = providers.gradleProperty("duocb.versionName").get()
 
