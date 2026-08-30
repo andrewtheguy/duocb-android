@@ -70,8 +70,14 @@ if [ "$SIGN" = 1 ]; then
       -dname "$dname" \
       -storepass "$password" -keypass "$password" >/dev/null)
     echo "   created $keystore (alias $alias, $dname) — back it up, it cannot be regenerated"
-  elif [ -z "$password" ]; then
-    read -r -s -p "Password for $keystore: " password; echo
+  else
+    if [ -z "$password" ]; then
+      read -r -s -p "Password for $keystore: " password; echo
+    fi
+    # Fail before Gradle does: a wrong alias or password otherwise surfaces as
+    # a signing error several minutes into the build.
+    "$keytool" -list -keystore "$keystore" -alias "$alias" -storepass "$password" >/dev/null ||
+      { echo "no key \"$alias\" in $keystore (or wrong password)" >&2; exit 1; }
   fi
 
   export DUOCB_KEYSTORE="$keystore" DUOCB_KEYSTORE_PASSWORD="$password" DUOCB_KEY_ALIAS="$alias"

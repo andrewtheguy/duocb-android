@@ -80,16 +80,50 @@ targets `ADB_SERIAL`, else `EMULATOR_SERIAL`, else the single attached device.
 
 ```bash
 scripts/build-release-apk.sh            # → dist/duocb-android-<version>.apk
-scripts/build-release-apk.sh --bundle   # → dist/duocb-android-<version>.aab
+scripts/build-release-apk.sh --bundle   # → dist/duocb-android-<version>.aab (for Play Console)
 scripts/build-release-apk.sh --unsigned
 RELEASE_DEVICE_SERIAL=<serial> scripts/install-release-apk.sh --launch
 ```
 
 The release key is a keystore outside the repo (default
 `~/.config/duocb-android/release.jks`, override with `DUOCB_KEYSTORE`; password
-from `DUOCB_KEYSTORE_PASSWORD` or prompted). The script creates it on first
-use — back it up. A release build cannot be installed over a debug build of
-the app (different signature); uninstall the other one first.
+from `DUOCB_KEYSTORE_PASSWORD` or prompted). It is this app's own key, not the
+one `../ezvpn-android` uses. The script creates it on first use — back up the
+file and its password the moment it exists: Play accepts no other key for this
+app afterwards, and a lost keystore cannot be regenerated. A release build
+cannot be installed over a debug build of the app (different signature);
+uninstall the other one first.
+
+### Uploading to Google Play
+
+Play only accepts an App Bundle (`.aab`), on every track including internal
+testing. Every upload needs a `duocb.versionCode` higher than the last one Play
+saw; `scripts/bump-jnilibs.sh <tag>` raises it by one along with the pinned
+core, so a release is normally a pin bump plus a bundle.
+
+```bash
+scripts/bump-jnilibs.sh <duocb-tag>      # pins the core, bumps versionName/versionCode
+./gradlew :app:testDebugUnitTest         # and a smoke run on a device
+scripts/build-release-apk.sh --bundle    # → dist/duocb-android-<version>.aab
+```
+
+Creating the app in Play Console the first time: package name
+`com.andrewtheguy.duocb` (permanent — the JNI class package it mirrors cannot
+move either), Play App Signing left on, which makes the key above the **upload**
+key. Then, before the first release can be reviewed: the store listing (a
+512×512 icon and a 1024×500 feature graphic are not in the bundle — the
+launcher icon is an adaptive vector), a privacy policy URL, and the Data safety
+form. That form is short here and worth getting exactly right: the app collects
+and transmits nothing to any server the developer runs. Clipboard content
+travels end-to-end encrypted between the user's own two devices over iroh QUIC
+— directly on a LAN, otherwise through public relays that carry ciphertext only
+— identities never leave the device, and there is no account, no analytics and
+no advertising ID. The `ACCESS_LOCAL_NETWORK` and `CHANGE_WIFI_MULTICAST_STATE`
+permissions exist for the LAN rendezvous and are explained under
+[Requirements](#requirements).
+
+The bundle is arm64-v8a only by design, so Play will report the release as
+reaching only 64-bit arm devices; that is expected, not a misconfiguration.
 
 ## Using the app
 
