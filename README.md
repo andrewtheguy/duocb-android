@@ -89,10 +89,11 @@ The release key is a keystore outside the repo (default
 `~/.config/duocb-android/release.jks`, override with `DUOCB_KEYSTORE`; password
 from `DUOCB_KEYSTORE_PASSWORD` or prompted). It is this app's own key, not the
 one `../ezvpn-android` uses. The script creates it on first use — back up the
-file and its password the moment it exists: Play accepts no other key for this
-app afterwards, and a lost keystore cannot be regenerated. A release build
-cannot be installed over a debug build of the app (different signature);
-uninstall the other one first.
+file and its password. With Play App Signing on (see below) this is only the
+*upload* key, so losing it is recoverable through Play Console's upload key
+reset; the key users' devices actually verify is held by Google and is the one
+that could never be replaced. A release build cannot be installed over a debug
+build of the app (different signature); uninstall the other one first.
 
 ### Uploading to Google Play
 
@@ -109,8 +110,11 @@ scripts/build-release-apk.sh --bundle    # → dist/duocb-android-<version>.aab
 
 Creating the app in Play Console the first time: package name
 `com.andrewtheguy.duocb` (permanent — the JNI class package it mirrors cannot
-move either), Play App Signing left on, which makes the key above the **upload**
-key. Then, before the first release can be reviewed: the store listing (a
+move either), and Play App Signing left on with a Google-generated app signing
+key. That splits signing in two: Google holds and manages the key that signs
+what users install, and the keystore above is demoted to the **upload** key,
+which only proves an upload is from you and can be reset from Play Console if
+it is ever lost. Then, before the first release can be reviewed: the store listing (a
 512×512 icon and a 1024×500 feature graphic are not in the bundle — the
 launcher icon is an adaptive vector), a privacy policy URL, and the Data safety
 form. That form is short here and worth getting exactly right: the app collects
