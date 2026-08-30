@@ -102,10 +102,12 @@ android {
         versionCode = providers.gradleProperty("duocb.versionCode").get().toInt()
         versionName = providers.gradleProperty("duocb.versionName").get()
 
-        // arm64 only (Google Play's 64-bit requirement; 32-bit devices are not
-        // supported). Only lib/arm64-v8a/libduocb.so from the core zip is
-        // packaged, so the APK refuses to install on any other ABI.
-        ndk { abiFilters.add("arm64-v8a") }
+        // 64-bit only (Google Play's 64-bit requirement; 32-bit devices are
+        // not supported): arm64 for phones and the arm64 VM, x86_64 for the
+        // Intel-host emulator and x86_64 VMs. Only these ABIs' libduocb.so
+        // from the core zip are packaged, so the APK refuses to install
+        // anywhere else.
+        ndk { abiFilters.addAll(listOf("arm64-v8a", "x86_64")) }
     }
 
     // Release signing comes from the environment (scripts/build-release-apk.sh
