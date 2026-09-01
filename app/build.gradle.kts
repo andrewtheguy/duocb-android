@@ -99,8 +99,13 @@ android {
         // Below API 37 no such permission exists and INTERNET grants local
         // access implicitly, so the ask is API-gated, not target-gated.
         targetSdk = 37
+        // The app's own version (gradle.properties), independent of the core pin.
         versionCode = providers.gradleProperty("duocb.versionCode").get().toInt()
         versionName = providers.gradleProperty("duocb.versionName").get()
+        // The pinned libduocb release, shown next to the app version in the UI.
+        // A local FFI build (DUOCB_LOCAL_JNILIBS) still reports the pinned
+        // number: the local .so carries none.
+        buildConfigField("String", "DUOCB_CORE_VERSION", "\"${duocbReleaseTag.removePrefix("v")}\"")
 
         // 64-bit only (Google Play's 64-bit requirement; 32-bit devices are
         // not supported): arm64 for phones and the arm64 VM, x86_64 for the
