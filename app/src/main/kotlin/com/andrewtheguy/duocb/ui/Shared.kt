@@ -238,11 +238,14 @@ fun ChannelBadge(channel: SignalChannel) {
     Footnote("Channel: $badge")
 }
 
-/** The app version, at the bottom of home screens. */
+/**
+ * The app version and the duocb core it ships, at the bottom of home screens.
+ * The two move independently: a core bump does not change the app version.
+ */
 @Composable
 fun AppVersionFooter() {
     Text(
-        "duocb v${BuildConfig.VERSION_NAME}",
+        "duocb v${BuildConfig.VERSION_NAME} · core ${BuildConfig.DUOCB_CORE_VERSION}",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().padding(top = 24.dp),

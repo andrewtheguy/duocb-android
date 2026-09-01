@@ -54,7 +54,9 @@ ANDROID_SERIAL=<serial> ./gradlew :app:installDebug
 ```
 
 Pin a newer core release with `scripts/bump-jnilibs.sh <tag>` (rewrites the
-tag, the sha256, and the app version in `gradle.properties`). Until a duocb
+tag and the sha256 in `gradle.properties`; the app's own `duocb.versionName` /
+`duocb.versionCode` are independent of the core and are bumped by hand — the
+footer shows both). Until a duocb
 release carries the Android asset the pin is empty and only the local build
 below works.
 
@@ -100,11 +102,12 @@ build of the app (different signature); uninstall the other one first.
 
 Play only accepts an App Bundle (`.aab`), on every track including internal
 testing. Every upload needs a `duocb.versionCode` higher than the last one Play
-saw; `scripts/bump-jnilibs.sh <tag>` raises it by one along with the pinned
-core, so a release is normally a pin bump plus a bundle.
+saw; raise it (and `duocb.versionName` as appropriate) by hand in
+`gradle.properties` — pinning a newer core does not change it.
 
 ```bash
-scripts/bump-jnilibs.sh <duocb-tag>      # pins the core, bumps versionName/versionCode
+scripts/bump-jnilibs.sh <duocb-tag>      # pins the core (only if it changed)
+# bump duocb.versionCode / duocb.versionName in gradle.properties
 ./gradlew :app:testDebugUnitTest         # and a smoke run on a device
 scripts/build-release-apk.sh --bundle    # → dist/duocb-android-<version>.aab
 ```
